@@ -1,0 +1,4 @@
+# UNIT.deps for sem
+# Evidence: #include <common.h>; LIBRARIES = -lsys.
+base 1
+require sys
