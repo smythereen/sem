@@ -76,7 +76,11 @@ blocks until the first process frees the key.
   (`SysPrt`, `LocalName`, `TraceLevel`, `TracePointer`) and the
   `common.h` types. Relink check: linking without `-lsys` fails on
   exactly those symbols. No other public unit is referenced.
-- **Indirect:** none beyond sys, which has no public-unit dependencies.
+- **Indirect (transitive):** `atomic`, header only. `sys` requires
+  it (`sys/UNIT.deps`), and `sys/sysprt.c` includes `<atomic_32.h>`
+  for `S32_Inc` and `S32_Dec_And_Test`. It is needed to build sys,
+  but there is no `-latomic` library to link. Graph:
+  `sem → sys → atomic (header)`.
 - **Makefile `-l` list vs. real use:** `-lsys` matches the code's use,
   with no unused entries.
 
