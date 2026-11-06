@@ -84,6 +84,56 @@ blocks until the first process frees the key.
 - **Makefile `-l` list vs. real use:** `-lsys` matches the code's use,
   with no unused entries.
 
+## Using this unit from C++
+
+This unit can be used from **C and C++**. Keep the unit's `.c` implementation
+files compiled as C with `gcc`/`CC`; compile your C++ client with `g++`/`CXX`
+and use `g++` for the final mixed-language link. There is no need to rebuild
+the C library as C++.
+
+Base's shared rules recognize C++ product sources named `.cc` and compile
+them with `CXX` and `CXXFLAGS` (for example `make CXX=g++`). `CPP` names
+the preprocessor, not the C++ compiler. The commands below assume the
+headers and libraries have already been installed into `$HOME/cmn` and
+`$HOME/lib`. GNU C++17 on Linux x86-64 is the example target; GNU extensions
+in the shared types/headers are intentional.
+
+`sem.h` and `common.h` already supply `extern "C"` for the public
+functions. Include `sem.h` directly. A C++ exception does not release a
+System V lock: arrange for `SemFree(key)` on every exit path (for example
+with an application-owned scope guard). `SemFree` releases the lock; it
+does not remove the persistent kernel semaphore. Reserve keys and arrange
+lifecycle cleanup separately. Running the following example without an
+argument performs no semaphore operations.
+
+Save as `use_sem.cc`:
+
+```cpp
+#include <sem.h>
+int main(int argc, char **argv) {
+    if (argc != 2) return 0; // No key: no IPC object is touched.
+    u32 key = static_cast<u32>(strtoul(argv[1], nullptr, 0));
+    SemAllo(key); // May block: use only a key reserved by your application.
+    // Protected work goes here.
+    SemFree(key);
+    return 0;
+}
+```
+
+```sh
+g++ -std=gnu++17 -I"$HOME/cmn" use_sem.cc -L"$HOME/lib" -lsem -lsys -o use_sem
+./use_sem
+```
+
+The C++ example above was compiled, linked and run on Linux x86-64 using
+Clang 22.1.8 via `zig c++ -std=gnu++17 -nostdlib++`, with GCC 14.2-built C
+objects where needed. It uses no C++ standard-library runtime. The `g++`
+command is the GNU-toolchain form; that driver was not available for this
+smoke check. This is not an exhaustive API or concurrency test.
+
+The semaphore example was run without a key, exercising the no-IPC path;
+its locking calls were linked but not executed by this smoke check.
+
 ## License
 
 The original files are offered under `Apache-2.0 OR GPL-2.0-or-later`;
