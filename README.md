@@ -8,6 +8,8 @@ example, `map`'s `MapFileEx` locks a mapped file by its inode number.
 The semaphore IDs are cached in a table inside the process, so repeated
 calls do not run `semget` each time.
 
+It builds with the [base](https://github.com/smythereen/base) unit make system, which handles C, C++, and Rust, including large mixed-language projects.
+
 ## What it does
 
 - Each key gets one semaphore, created with `IPC_CREAT|0666`. A value of
